@@ -21,14 +21,18 @@ This project demonstrates Azure AD (Microsoft Entra ID) authentication integrati
 
 ### Azure Configuration
 
-#### Basics
+<details>
+<summary>Basics</summary>
 
 1. First, you must get sign up for an Azure account and create a Subscription.
     - [Azure for Students](https://azure.microsoft.com/en-us/free/students) gives you credits for free if you have a school related account.
     - With an account, you should have access to Microsoft Entra ID, and a default tenant should be configured for you.
     - You also should have access to CosmosDB.
 
-#### Microsoft Entra ID
+</details>
+
+<details>
+<summary>Microsoft Entra ID</summary>
 
 1. In the Azure home page search bar, navigate to "Microsoft Entra ID". This should bring you to your default tenant.
     - Record the tenant ID, this is `AAD_TENANT_ID` in your env file
@@ -67,7 +71,10 @@ This project demonstrates Azure AD (Microsoft Entra ID) authentication integrati
     - You can add more granular scopes and use Azure AD to track which users have permission to access LangGraph resources. See `backend/auth.py:authenticate` and `backend/auth.py:add_owner`.
     - [Helpful Guides](https://langchain-ai.github.io/langgraph/tutorials/auth/resource_auth/) are available on the above process.
 
-#### CosmosDB
+</details>
+
+<details>
+<summary>CosmosDB</summary>
 
 1. In the Azure home page search bar, navigate to "Azure Cosmos DB".
 
@@ -87,6 +94,8 @@ This project demonstrates Azure AD (Microsoft Entra ID) authentication integrati
     - Set scaling to manual to limit resource spend and create
 
 5. A [visual reference](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/quickstart-portal) of what the CosmosDB UX may be helpful
+
+</details>
 
 ## Architecture
 
@@ -109,7 +118,7 @@ This application consists of:
 
 ### Using the Scripts 
 
-Note: These scripts should be modified in production settings. They will start your application in a development environment.
+Note: These scripts should be modified in production settings. They will start your application in a development environment. All scripts **MUST** be run from the root directory of this repo.
 
 1. Install dependencies using 
     ```bash
