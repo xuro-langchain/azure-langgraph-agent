@@ -22,7 +22,7 @@ def azure_tool(scopes, config_token_key="__azure_obo_token"):
         @wraps(func)
         async def async_wrapper(config: RunnableConfig, *args, **kwargs):
             user_info = config.get("configurable", {}).get("langgraph_auth_user", {})
-            user_token = user_info.get("user_access_token")
+            user_token = user_info.get("__user_access_token")
             if not user_token:
                 return "❌ No user access token found. Please log in again."
             try:

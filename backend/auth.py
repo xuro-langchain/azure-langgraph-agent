@@ -73,7 +73,7 @@ async def authenticate(headers: dict) -> Auth.types.MinimalUserDict:
             "identity": user_id,
             "email": id_claims.get("email"),
             "display_name": id_claims.get("name"),
-            "user_access_token": access_token,
+            "__user_access_token": access_token,
         }
     except Exception as e:
         raise ValueError(f"❌ LangGraph Auth Error: {str(e)}")
