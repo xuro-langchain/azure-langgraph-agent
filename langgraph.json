@@ -1,0 +1,14 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "AAD Agent": "./backend/agent.py:create_graph"
+  },
+  "env": ".env",
+  "http": {
+    "app": "./backend/app.py:app"
+  },
+  "auth": {
+    "path": "./backend/auth.py:auth",
+    "disable_studio_auth": "true"
+  }
+}
