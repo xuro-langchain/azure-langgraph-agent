@@ -41,6 +41,9 @@ def azure_tool(scopes, config_token_key="__azure_obo_token"):
             # Shallow copy config and configurable for parallel safety
             config = dict(config)
             config["configurable"] = dict(config.get("configurable", {}))
+            # Mutable objects like lists in configurable remain shared
+            # but top level keys like our token key can now point to new values
+            # This gives a unique token for each tool call
             config["configurable"][config_token_key] = obo_token
             return await func(config, *args, **kwargs)
         return async_wrapper
