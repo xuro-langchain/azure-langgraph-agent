@@ -1,10 +1,9 @@
 import asyncio
 import httpx
-from email.utils import formatdate
-import contextvars
-import os
+from typing import Annotated
+import copy
 
-from langchain_core.tools import tool
+from langchain_core.tools import tool, InjectedToolArg
 from langchain_core.runnables import RunnableConfig
 from backend.auth import acquire_obo_token, msal_app, AAD_REDIRECT_URI
 
@@ -39,9 +38,9 @@ def azure_tool(scopes, config_token_key="__azure_obo_token"):
                         f"Please tell them to click this link to authorize: {url}"
                     )
                 return f"❌ Failed to acquire delegated token: {str(e)}"
-            # Store OBO token in config under a reserved key
-            if "configurable" not in config:
-                config["configurable"] = {}
+            # Shallow copy config and configurable for parallel safety
+            config = dict(config)
+            config["configurable"] = dict(config.get("configurable", {}))
             config["configurable"][config_token_key] = obo_token
             return await func(config, *args, **kwargs)
         return async_wrapper
