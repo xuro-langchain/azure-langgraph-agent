@@ -12,12 +12,11 @@ This project demonstrates Azure AD (Microsoft Entra ID) authentication integrati
 
 3. We also use OpenAI models in this application, so add your OpenAI API Key as well.
 
-4. Generate a session secret to store as `SESSION_SECRET` in your env file. You can do this by running:
+4. Generate a session secret to store as `SESSION_SECRET` in your env file. You can do this in a bash terminal by running:
 
     ```bash
     python -c "import secrets; print(secrets.token_urlsafe(32))"
     ```
-    in a bash terminal
 
 ### Azure Configuration
 
