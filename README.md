@@ -107,6 +107,24 @@ This application consists of:
 
 ## Running the Application
 
+### Using the Scripts 
+
+Note: These scripts should be modified in production settings. They will start your application in a development environment.
+
+1. Install dependencies using 
+    ```bash
+    scripts/install.sh
+    ```
+2. Start the application frontend and backend using
+    ```bash
+    scripts/run.sh
+    ```
+3. A browser window should open to the frontend (default localhost:3000).
+4. After finishing usage of your application, shut it down using
+    ```bash
+    scripts/shutdown.sh
+    ``` 
+
 ### Manually Running the Application
 
 1. In terminal, start the backend by running:
@@ -125,6 +143,4 @@ This application consists of:
 
 3. Navigate to `localhost:3000` to interact with the application.
 
-### Startup Script
-
-Coming Soon!
+NOTE: Starting manually will show the logs in your terminals for live debugging
