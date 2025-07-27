@@ -8,11 +8,6 @@ from langchain_core.tools import tool
 from langchain_core.runnables import RunnableConfig
 from backend.auth import acquire_obo_token, msal_app, AAD_REDIRECT_URI
 
-# Context variable for OBO token
-_obo_token_ctx = contextvars.ContextVar("obo_token")
-
-def get_current_obo_token() -> str:
-    return _obo_token_ctx.get(None)
 
 def set_request_headers(access_token):
     return {
@@ -20,7 +15,7 @@ def set_request_headers(access_token):
         "Content-Type": "application/json"
     }
 
-def azure_tool(scopes):
+def azure_tool(scopes, config_token_key="__azure_obo_token"):
     def decorator(func):
         from functools import wraps
         @tool
@@ -44,11 +39,11 @@ def azure_tool(scopes):
                         f"Please tell them to click this link to authorize: {url}"
                     )
                 return f"❌ Failed to acquire delegated token: {str(e)}"
-            token_token = _obo_token_ctx.set(obo_token)
-            try:
-                return await func(config, *args, **kwargs)
-            finally:
-                _obo_token_ctx.reset(token_token)
+            # Store OBO token in config under a reserved key
+            if "configurable" not in config:
+                config["configurable"] = {}
+            config["configurable"][config_token_key] = obo_token
+            return await func(config, *args, **kwargs)
         return async_wrapper
     return decorator
 
@@ -58,7 +53,7 @@ async def get_user_profile(config: RunnableConfig) -> str:
     """
     Get the user's profile information from Microsoft Graph (displayName, email, jobTitle).
     """
-    obo_token = get_current_obo_token()
+    obo_token = config.get("configurable", {}).get("__azure_obo_token")
     async with httpx.AsyncClient() as client:
         response = await client.get(
             "https://graph.microsoft.com/v1.0/me",
@@ -79,7 +74,7 @@ async def list_resource_groups(config: RunnableConfig, subscription_id: str) -> 
     """
     List all resource groups in the user's Azure subscription using delegated OBO access.
     """
-    obo_token = get_current_obo_token()
+    obo_token = config.get("configurable", {}).get("__azure_obo_token")
     url = f"https://management.azure.com/subscriptions/{subscription_id}/resourcegroups?api-version=2021-04-01"
     headers = {
         "Authorization": f"Bearer {obo_token}",
@@ -104,7 +99,7 @@ async def list_subscriptions(config: RunnableConfig) -> str:
     """
     List all Azure subscriptions the user has access to using delegated OBO access.
     """
-    obo_token = get_current_obo_token()
+    obo_token = config.get("configurable", {}).get("__azure_obo_token")
     url = "https://management.azure.com/subscriptions?api-version=2021-01-01"
     headers = {
         "Authorization": f"Bearer {obo_token}",
