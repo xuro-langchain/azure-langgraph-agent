@@ -26,7 +26,7 @@ This project demonstrates Azure AD (Microsoft Entra ID) authentication integrati
 1. First, you must get sign up for an Azure account and create a Subscription.
     - [Azure for Students](https://azure.microsoft.com/en-us/free/students) gives you credits for free if you have a school related account.
     - With an account, you should have access to Microsoft Entra ID, and a default tenant should be configured for you.
-    - You also should have access to CosmosDB, though no database accounts will likely have been created yet.
+    - You also should have access to CosmosDB.
 
 #### Microsoft Entra ID
 
@@ -52,7 +52,7 @@ This project demonstrates Azure AD (Microsoft Entra ID) authentication integrati
     - If you don't set this, you'll get v1 tokens with issuer `https://sts.windows.net/{tenant_id}/` which will cause authentication failures.
 
 6. Click "API Permissions" in the left hand navigation pane for your App Registration
-    - Click *Add a Permission*, select *Microsoft Graph* and *Delegated Permissions*. Search "User.Read" and add it
+    - Click *Add a Permission*, select *Microsoft Graph* and *Delegated Permissions*. Add "User.Read"
     - Click *Add a Permission*, select *APIs My Organization Uses* and search for *Azure Resource Manager*
     - Select *Azure Resource Manager* and *Delegated Permissions*. Add "user_impersonation" as a permission
     - These two API permissions allow your LangGraph Application to access Microsoft resources on behalf of a user (delegated access)
@@ -64,7 +64,7 @@ This project demonstrates Azure AD (Microsoft Entra ID) authentication integrati
     - The display names and descriptions can be whatever you like
     - This represents a resource that you want your LangGraph app to expose - just like how Microsoft Graph exposes user profile information
     - In this case, we are setting an arbitrary scope to represent general access to LangGraph resources (i.e. viewing threads, assistants)
-    - You can add more granular scopes and use Azure AD to track which users have permission to access LangGraph resources. see `backend/auth.py:authenticate` and `backend/auth.py:add_owner` as examples.
+    - You can add more granular scopes and use Azure AD to track which users have permission to access LangGraph resources. See `backend/auth.py:authenticate` and `backend/auth.py:add_owner`.
     - [Helpful Guides](https://langchain-ai.github.io/langgraph/tutorials/auth/resource_auth/) are available on the above process.
 
 #### CosmosDB
