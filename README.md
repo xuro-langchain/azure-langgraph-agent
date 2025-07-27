@@ -36,9 +36,9 @@ This project demonstrates Azure AD (Microsoft Entra ID) authentication integrati
     * Save your changes. This ensures that access tokens and id tokens us the v2 issuer format: `https://login.microsoftonline.com/{tenant_id}/v2.0`
     * If you don't set this, you'll get v1 tokens with issuer `https://sts.windows.net/{tenant_id}/` which will cause authentication failures.
 6. Click "API Permissions" in the left hand navigation pane for your App Registration
-    * Click "Add a Permission", select "Microsoft Graph" and "Delegated Permissions". Search "User.Read" and add it
-    * Click "Add a Permission", select "APIs My Organization Uses" and search for "Azure Resource Manager"
-    * Select "Azure Resource Manager" and "Delegated Permissions". Add "user_impersonation" as a permission
+    * Click *Add a Permission*, select *Microsoft Graph* and *Delegated Permissions*. Search "User.Read" and add it
+    * Click *Add a Permission*, select *APIs My Organization Uses* and search for *Azure Resource Manager*
+    * Select *Azure Resource Manager* and *Delegated Permissions*. Add "user_impersonation" as a permission
     * These two API permissions allow your LangGraph Application to access Microsoft resources on behalf of a user (delegated access)
     * Specifically, it allows your LangGraph Application to read the user's profile information from Microsoft Graph, and act as that user in managing Azure Resources. 
     * Users need to consent before your app will be able to finalize its access - this consent process happens during your LangGraph application's runtime through a pop-up.
@@ -53,16 +53,16 @@ This project demonstrates Azure AD (Microsoft Entra ID) authentication integrati
 #### CosmosDB
 1. In the Azure home page search bar, navigate to "Azure Cosmos DB".
 2. Click "Create" and select Azure Cosmos DB for NoSQL
-    * Set Learning Workload Type (or higher if you intend to scale)
-    * Select your Azure Subscription and create a Resource Group for your Project
+    * Set "Learning" Workload Type (or higher if you intend to scale)
+    * Select your *Azure Subscription* and create a *Resource Group* for your project
     * Proceed with the defaults and create the Azure Cosmos DB Account. You may need to adjust location to successfully create
 3. When your resource is ready, go to its Overview page
     * Note the URI - the portion before the ":" is the `COSMOS_URL` in your env file. The portion after the ":" is your `COSMOS_PORT`, and should be by default `443`
 4. In the left hand navigation bar, enter the Data Explorer
-    * Click Create New Container - this will be where your LangGraph application will store sensitive secrets and tokens
-    * Create a new Database - the name will be `COSMOS_DB` in your env file
-    * Create a Container - the name will be `COSMOS_CONTAINER` in your env file
-    * Create a Partition Key - the name **without** the leading slash will be `COSMOS_PARITION_KEY` in your env file
+    * Click *Create New Container* - this will be where your LangGraph application will store sensitive secrets and tokens
+    * Create a *new Database* - the name will be `COSMOS_DB` in your env file
+    * Create a *Container* - the name will be `COSMOS_CONTAINER` in your env file
+    * Create a *Partition Key* - the name **without** the leading slash will be `COSMOS_PARITION_KEY` in your env file
     * Set scaling to manual to limit resource spend and create
 5. A [visual reference](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/quickstart-portal) of what the CosmosDB UX may be helpful
 
