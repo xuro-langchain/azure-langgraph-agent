@@ -2,104 +2,91 @@
 
 This project demonstrates Azure AD (Microsoft Entra ID) authentication integration with LangGraph API, using MSAL for token management and Cosmos DB for persistent token storage.
 
-## Azure AD Configuration
+## Setup
 
-### Important: Token Version Configuration
+### Environment Variables
+1. Create a `.env` file based off the `.env.example` file in the repo. You will fill in these environment variables as you continue setup.
+2. Begin by adding the required LangSmith variables to trace application runs to LangSmith.
+3. We also use OpenAI models in this application, so add your OpenAI API Key as well.
+4. Generate a session secret to store as `SESSION_SECRET` in your env file. You can do this by running `python -c "import secrets; print(secrets.token_urlsafe(32))"` in a bash terminal
 
-**You must set the token version to 2 in your Azure AD app manifest:**
+### Azure Configuration
 
-1. Go to your Azure AD app registration
-2. Navigate to **Manifest**
-3. Find the `accessTokenAcceptedVersion` property
-4. Set it to `2` (not `null` or `1`)
-5. Save the manifest
+#### Basics
+1. First, you must get sign up for an Azure account and create a Subscription. 
+    * [Azure for Students](https://azure.microsoft.com/en-us/free/students) gives you credits for free if you have a school related account. 
+    * With an account, you should have access to Microsoft Entra ID, and a default tenant should be configured for you.
+    * You also should have access to CosmosDB, though no database accounts will likely have been created yet.
 
-This ensures that:
-- Access tokens use the v2 issuer format: `https://login.microsoftonline.com/{tenant_id}/v2.0`
-- ID tokens use the v2 issuer format: `https://login.microsoftonline.com/{tenant_id}/v2.0`
+#### Microsoft Entra ID
+1. In the Azure home page search bar, navigate to "Microsoft Entra ID". This should bring you to your default tenant. 
+    * Record the tenant ID, this is `AAD_TENANT_ID` in your env file
+2. In the "Add" button, create a new App Registration
+    * This App Registration represents your LangGraph application to Azure. By creating one, you can now let Azure know when your LangGraph application is making requests to Azure for authn/z
+    * Give the App Registration any name you want, and make it multitenant
+    * Provide a redirect URL for **your frontend**. By default in this repo, this value should be `http://localhost:3000/auth/callback`. However, if you host this frontend at a different URL, it should be `https://<your-domain>/auth/callback`.
+3. After creating the App Registration, you should see an Overview page for your app. Note the following for your environment file:
+    * Your Application (client) ID - this is `AAD_CLIENT_ID` in your env file
+    * Your Application ID URI - this is `AAD_APPLICATION_URI` in your env file
+4. In the left hand navigation pane for your App Registration, click "Certificates and Secrets"
+    * Create a new Client secret with any name you like
+    * Copy the Value - this is `AAD_CLIENT_SECRET` in your env file
+5. Click "Manifest" in the left hand navigation pane for your App Registration
+    * Set "accessTokenAcceptedVersion": 2
+    * Save your changes. This ensures that access tokens and id tokens us the v2 issuer format: `https://login.microsoftonline.com/{tenant_id}/v2.0`
+    * If you don't set this, you'll get v1 tokens with issuer `https://sts.windows.net/{tenant_id}/` which will cause authentication failures.
+6. Click "API Permissions" in the left hand navigation pane for your App Registration
+    * Click "Add a Permission", select "Microsoft Graph" and "Delegated Permissions". Search "User.Read" and add it
+    * Click "Add a Permission", select "APIs My Organization Uses" and search for "Azure Resource Manager"
+    * Select "Azure Resource Manager" and "Delegated Permissions". Add "user_impersonation" as a permission
+    * These two API permissions allow your LangGraph Application to access Microsoft resources on behalf of a user (delegated access)
+    * Specifically, it allows your LangGraph Application to read the user's profile information from Microsoft Graph, and act as that user in managing Azure Resources. 
+    * Users need to consent before your app will be able to finalize its access - this consent process happens during your LangGraph application's runtime through a pop-up.
+8. Click "Expose an API" in the left hand navigation pane for your App Registration
+    * Add a scope named "access". Allow admins and users to consent.
+    * The display names and descriptions can be whatever you like
+    * This represents a resource that you want your LangGraph app to expose - just like how Microsoft Graph exposes user profile information
+    * In this case, we are setting an arbitrary scope to represent general access to LangGraph resources (i.e. viewing threads, assistants)
+    * You can add more granular scopes and use Azure AD to track which users have permission to access LangGraph resources. see `backend/auth.py:authenticate` and `backend/auth.py:add_owner` as examples.
+    * [Helpful Guides](https://langchain-ai.github.io/langgraph/tutorials/auth/resource_auth/) are available on the above process.
 
-If you don't set this, you'll get v1 tokens with issuer `https://sts.windows.net/{tenant_id}/` which will cause authentication failures.
+#### CosmosDB
+1. In the Azure home page search bar, navigate to "Azure Cosmos DB".
+2. Click "Create" and select Azure Cosmos DB for NoSQL
+    * Set Learning Workload Type (or higher if you intend to scale)
+    * Select your Azure Subscription and create a Resource Group for your Project
+    * Proceed with the defaults and create the Azure Cosmos DB Account. You may need to adjust location to successfully create
+3. When your resource is ready, go to its Overview page
+    * Note the URI - the portion before the ":" is the `COSMOS_URL` in your env file. The portion after the ":" is your `COSMOS_PORT`, and should be by default `443`
+4. In the left hand navigation bar, enter the Data Explorer
+    * Click Create New Container - this will be where your LangGraph application will store sensitive secrets and tokens
+    * Create a new Database - the name will be `COSMOS_DB` in your env file
+    * Create a Container - the name will be `COSMOS_CONTAINER` in your env file
+    * Create a Partition Key - the name **without** the leading slash will be `COSMOS_PARITION_KEY` in your env file
+    * Set scaling to manual to limit resource spend and create
+5. A [visual reference](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/quickstart-portal) of what the CosmosDB UX may be helpful
+
 
 ## Architecture
+This application consists of:
+1. LangGraph Server backend with custom FastAPI routes
+    * `backend/agent.py` contains our LangGraph agent
+    * `backend/app.py` contains our FastAPI authentication routes
+    * `backend/auth.py` contains our LangGraph authentication logic, as well as helpers for our agent to be authorized to access Azure resources
+    * `backend/secrets.py` contains logic to store sensitive access tokens in secure CosmosDB storage
+    * `backend/tools.py` contains tools that our LangGraph agent can use, with most tools accessing Azure resources that require authorization.
+2. Next.js Frontend 
+    * `frontend/app/auth/callback` contains our frontend callback page. This our Redirect URI we set in Azure, which determines where Azure will send our authorization code after we complete the browser login process. Notably, the Redirect URI must be a frontend route.
+    * `frontend/app/page.tsx` represents our main page
+    * `frontend/components/Chat.tsx` defines our main Chat component and message logic
+    * `frontend/lib/auth.tsx` contains our handlers for calling our backend authentication endpoints to login using OAuth2.0 Auth Code Flow
 
-- **Frontend**: Next.js with TypeScript
-- **Backend**: FastAPI with MSAL for Azure AD integration
-- **Token Storage**: Cosmos DB for persistent MSAL token cache
-- **Authentication**: Custom auth middleware for LangGraph API
+## Running the Application
 
-## Features
+### Manually Running the Application
+1. In terminal, start the backend by running `langgraph dev` in the root directory of this repo. The backend will be available at `localhost:2024`
+2. In a separate terminal, start the frontend by running `npm run dev` in the `frontend` directory of this repo. The frontend will be available at `localhost:3000`
+3. Navigate to `localhost:3000` to interact with the application.
 
-- Azure AD authentication flow with delegated permissions
-- Automatic token refresh
-- Persistent token storage in Cosmos DB
-- Custom authentication for LangGraph API
-- Session management with cookies
-- Microsoft Graph integration for calendar and profile access
-- Delegated access demonstration with RBAC
-
-## Getting Started
-
-1. Configure your Azure AD app registration with token version 2
-2. Set up your environment variables
-3. Install dependencies: `pip install -r requirements.txt`
-4. Start the backend: `python -m uvicorn backend.app:app --reload`
-5. Start the frontend: `cd frontend && npm run dev`
-
-## Token Flow
-
-1. User logs in via Azure AD with delegated permissions
-2. MSAL exchanges authorization code for tokens (including Microsoft Graph scopes)
-3. Tokens are stored in Cosmos DB cache
-4. Frontend requests tokens from backend
-5. Backend validates tokens and returns them
-6. Frontend includes tokens in LangGraph API requests
-7. Custom auth middleware validates tokens for LangGraph API access
-8. Agent uses delegated tokens to access user's Microsoft Graph data
-
-## Azure AD Configuration
-
-### Required API Permissions
-
-Your Azure AD app registration needs the following delegated permissions:
-
-- **Microsoft Graph**:
-  - `Calendars.Read` - Read user's calendar
-  - `User.Read` - Read user's profile
-- **Your Application**:
-  - `access` - Custom scope for your app
-
-### Setting Up Delegated Permissions
-
-1. Go to your Azure AD app registration
-2. Navigate to **API permissions**
-3. Click **Add a permission**
-4. Select **Microsoft Graph** → **Delegated permissions**
-5. Add the required permissions listed above
-6. Grant admin consent for your organization
-
-## Required Azure AD (Entra ID) App Permissions
-
-To enable delegated access (OBO) to Microsoft Graph, Azure Resource Manager (ARM), or other Azure APIs, you must grant your app registration the appropriate delegated permissions in Entra ID (Azure AD):
-
-### 1. Microsoft Graph
-- **Delegated permissions:**
-  - `User.Read`
-  - `Calendars.Read` (if you want calendar access)
-  - Any other Graph permissions your app needs
-
-### 2. Azure Resource Manager (ARM)
-- **Delegated permission:**
-  - `user_impersonation` for the Azure Service Management API (App ID: `797f4846-ba00-4fd7-ba43-dac1f8f63013`)
-
-### How to Add Permissions
-1. Go to [Azure Portal > Azure Active Directory > App registrations](https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade).
-2. Select your app registration.
-3. Go to **API permissions** > **Add a permission**.
-4. For Microsoft Graph, choose **Microsoft Graph** > **Delegated permissions** and add the required permissions.
-5. For ARM, choose **APIs my organization uses**, search for **Azure Service Management** (App ID: `797f4846-ba00-4fd7-ba43-dac1f8f63013`), select it, then add the **user_impersonation** delegated permission.
-6. Click **Add permissions**.
-7. (Recommended) Click **Grant admin consent** for your tenant.
-
-**Note:**
-- You must grant these permissions before your app can request tokens for these resources via OBO.
-- If you add new permissions, it may take a few minutes for changes to propagate.
+### Startup Script
+Coming Soon!
