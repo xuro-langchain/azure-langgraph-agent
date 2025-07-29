@@ -14,14 +14,14 @@ def set_request_headers(access_token):
         "Content-Type": "application/json"
     }
 
-def azure_tool(scopes, config_token_key="__azure_obo_token"):
+def azure_tool(scopes, config_access_key="__user_access_token", config_obo_key="__azure_obo_token"):
     def decorator(func):
         from functools import wraps
         @tool
         @wraps(func)
         async def async_wrapper(config: RunnableConfig, *args, **kwargs):
             user_info = config.get("configurable", {}).get("langgraph_auth_user", {})
-            user_token = user_info.get("__user_access_token")
+            user_token = user_info.get(config_access_key)
             if not user_token:
                 return "❌ No user access token found. Please log in again."
             try:
@@ -44,7 +44,7 @@ def azure_tool(scopes, config_token_key="__azure_obo_token"):
             # Mutable objects like lists in configurable remain shared
             # but top level keys like our token key can now point to new values
             # This gives a unique token for each tool call
-            config["configurable"][config_token_key] = obo_token
+            config["configurable"][config_obo_key] = obo_token
             return await func(config, *args, **kwargs)
         return async_wrapper
     return decorator
